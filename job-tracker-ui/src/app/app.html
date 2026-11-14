@@ -1,0 +1,262 @@
+<div class="app-shell">
+  <!-- Top Navigation Bar -->
+  <header class="top-navbar">
+    <div class="brand">
+      <i class="pi pi-briefcase brand-icon"></i>
+      <span class="brand-name">CareerTrack <span class="badge-ai">AI</span></span>
+    </div>
+
+    <nav class="nav-tabs">
+      <button class="nav-tab" [class.active]="activeTab === 'discover'" (click)="activeTab = 'discover'">
+        <i class="pi pi-compass"></i> Discover Jobs
+      </button>
+      <button class="nav-tab" [class.active]="activeTab === 'tracker'" (click)="activeTab = 'tracker'">
+        <i class="pi pi-folder-open"></i> Liked / Saved Jobs ({{ jobs.length }})
+      </button>
+    </nav>
+
+    <div class="nav-actions">
+      <label class="upload-resume-btn">
+        <i class="pi pi-upload"></i> {{ isUploadingResume ? 'Parsing...' : 'Upload Resume' }}
+        <input type="file" accept=".pdf" (change)="onFileSelected($event)" hidden />
+      </label>
+    </div>
+  </header>
+
+  <!-- TAB 1: DISCOVER JOBS (SWIPE DECK) -->
+  <main class="main-container" *ngIf="activeTab === 'discover'">
+    <div class="skills-banner" *ngIf="detectedSkills.length > 0 || detectedExperience">
+      <span class="skills-label"><i class="pi pi-sparkles"></i> Resume Profile:</span>
+      <div class="skills-chips">
+        <span class="skill-chip" *ngIf="detectedExperience" style="background: rgba(168, 85, 247, 0.18); color: #d8b4fe; border-color: rgba(168, 85, 247, 0.35);">
+          <i class="pi pi-user"></i> {{ detectedExperience }}
+        </span>
+        <span class="skill-chip" *ngFor="let skill of detectedSkills">{{ skill }}</span>
+      </div>
+    </div>
+
+    <div class="toast-banner" *ngIf="lastSavedMessage">
+      <i class="pi pi-check-circle"></i> {{ lastSavedMessage }}
+    </div>
+
+    <div class="card-deck-wrapper" *ngIf="currentJob; else noMoreCards">
+      <div class="job-swipe-card">
+        <div class="card-header-row">
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <span class="match-pill">{{ currentJob.matchPercentage }}% Match</span>
+            <span *ngIf="currentJob.sourceBoard" style="background: rgba(56, 189, 248, 0.14); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); padding: 0.28rem 0.7rem; border-radius: 999px; font-size: 0.78rem; font-weight: 700;">
+              {{ currentJob.sourceBoard }}
+            </span>
+          </div>
+          <span class="card-counter">{{ currentCardIndex + 1 }} of {{ jobFeed.length }}</span>
+        </div>
+
+        <h2 class="job-title">{{ currentJob.title }}</h2>
+        <div class="company-row">
+          <span class="company-name"><i class="pi pi-building"></i> {{ currentJob.company }}</span>
+          <span class="job-location"><i class="pi pi-map-marker"></i> {{ currentJob.location }}</span>
+          <span class="job-location" *ngIf="currentJob.experienceTag"><i class="pi pi-briefcase"></i> {{ currentJob.experienceTag }}</span>
+        </div>
+
+        <div class="salary-badge">
+          <i class="pi pi-wallet"></i> {{ currentJob.salaryRange }}
+        </div>
+
+        <p class="job-snippet">{{ currentJob.descriptionSnippet }}</p>
+
+        <div class="matched-tags">
+          <span class="tag-item" *ngFor="let s of currentJob.matchedSkills">{{ s }}</span>
+        </div>
+
+        <div class="swipe-action-dock">
+          <button class="action-btn pass" (click)="passJob()" title="Pass / Not Interested">
+            <i class="pi pi-times"></i>
+          </button>
+
+          <a [href]="currentJob.directApplyUrl" target="_blank" rel="noopener noreferrer" class="apply-redirect-btn" title="Open Job Application Page">
+            <i class="pi pi-external-link"></i> Apply on Portal
+          </a>
+
+          <button class="action-btn like" (click)="likeJob()" title="Like & Save to Folder">
+            <i class="pi pi-heart-fill"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <ng-template #noMoreCards>
+      <div class="empty-deck-state">
+        <div class="empty-icon-circle">
+          <i class="pi pi-file-pdf"></i>
+        </div>
+        <h3>{{ jobFeed.length === 0 ? 'Upload Your PDF Resume to Discover Live Jobs' : 'You have reviewed all jobs in this batch!' }}</h3>
+        <p>{{ jobFeed.length === 0 ? 'We will extract your skills and experience level to fetch matching real-time openings.' : 'Check your Liked / Saved Jobs folder at the top or upload an updated resume.' }}</p>
+        <div class="empty-cta-row">
+          <label class="upload-resume-btn primary-cta">
+            <i class="pi pi-upload"></i> Select Resume PDF
+            <input type="file" accept=".pdf" (change)="onFileSelected($event)" hidden />
+          </label>
+          <button *ngIf="jobs.length > 0" class="secondary-cta-btn" (click)="activeTab = 'tracker'">
+            <i class="pi pi-folder-open"></i> Open Saved Jobs ({{ jobs.length }})
+          </button>
+        </div>
+      </div>
+    </ng-template>
+  </main>
+
+  <!-- TAB 2: LIKED / SAVED JOBS FOLDER -->
+  <main class="main-container" *ngIf="activeTab === 'tracker'">
+    <div class="folder-header">
+      <div>
+        <h2><i class="pi pi-folder-open"></i> Saved & Liked Jobs Folder</h2>
+        <p>Review your liked roles, open direct application portals, and track your application status.</p>
+      </div>
+      <button class="add-manual-btn" (click)="openAddModal()">
+        <i class="pi pi-plus"></i> Add Manual Job
+      </button>
+    </div>
+
+    <!-- Pipeline Summary Cards -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-info">
+          <span class="label">Saved / To Apply</span>
+          <h3 class="value">{{ getCountByStatus(4) }}</h3>
+        </div>
+        <div class="metric-icon-box blue"><i class="pi pi-heart-fill"></i></div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-info">
+          <span class="label">Applied</span>
+          <h3 class="value">{{ getCountByStatus(0) }}</h3>
+        </div>
+        <div class="metric-icon-box purple"><i class="pi pi-send"></i></div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-info">
+          <span class="label">Interviews</span>
+          <h3 class="value">{{ getCountByStatus(1) }}</h3>
+        </div>
+        <div class="metric-icon-box orange"><i class="pi pi-calendar"></i></div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-info">
+          <span class="label">Offers</span>
+          <h3 class="value">{{ getCountByStatus(2) }}</h3>
+        </div>
+        <div class="metric-icon-box green"><i class="pi pi-check-circle"></i></div>
+      </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="table-toolbar">
+      <div class="search-box">
+        <i class="pi pi-search"></i>
+        <input type="text" [(ngModel)]="searchQuery" (input)="filterJobs()" placeholder="Filter saved jobs by company, role, or location..." />
+      </div>
+    </div>
+
+    <!-- Saved Jobs Table -->
+    <div class="table-card">
+      <table class="saas-table" *ngIf="filteredJobs.length > 0; else emptySaved">
+        <thead>
+          <tr>
+            <th>Company</th>
+            <th>Role</th>
+            <th>Location</th>
+            <th>Date Saved</th>
+            <th>Status</th>
+            <th>Apply Link</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let job of filteredJobs">
+            <td class="company-cell">{{ job.company }}</td>
+            <td class="role-cell">{{ job.role }}</td>
+            <td class="muted-cell">{{ job.location || 'Remote / India' }}</td>
+            <td class="muted-cell">{{ job.dateApplied }}</td>
+            <td>
+              <span class="status-pill" [ngClass]="'status-' + job.status">
+                {{ getStatusLabel(job.status) }}
+              </span>
+            </td>
+            <td>
+              <a *ngIf="job.notes && job.notes.startsWith('http')" [href]="job.notes" target="_blank" rel="noopener noreferrer" class="table-apply-link">
+                <i class="pi pi-external-link"></i> Apply Now
+              </a>
+              <span *ngIf="!job.notes || !job.notes.startsWith('http')" class="muted-cell">{{ job.notes || '—' }}</span>
+            </td>
+            <td>
+              <div class="action-cell">
+                <button *ngIf="job.status === 4" class="mark-applied-btn" (click)="markAsApplied(job)">
+                  <i class="pi pi-check"></i> Mark Applied
+                </button>
+                <button class="delete-icon-btn" (click)="deleteJob(job.id)" title="Remove from Saved">
+                  <i class="pi pi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <ng-template #emptySaved>
+        <div class="empty-table-msg">
+          No saved jobs match your filter. Switch to <strong>Discover Jobs</strong> and click ❤️ on roles you like!
+        </div>
+      </ng-template>
+    </div>
+  </main>
+
+  <!-- Manual Add Application Modal -->
+  <div class="modal-backdrop" *ngIf="displayAddModal" (click)="displayAddModal = false">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Track New Application</h3>
+        <button class="close-modal-btn" (click)="displayAddModal = false"><i class="pi pi-times"></i></button>
+      </div>
+
+      <div class="form-group">
+        <label>Company Name *</label>
+        <input type="text" [(ngModel)]="newJob.company" placeholder="e.g. Microsoft" />
+      </div>
+
+      <div class="form-group">
+        <label>Position / Role *</label>
+        <input type="text" [(ngModel)]="newJob.role" placeholder="e.g. Full-Stack .NET Developer" />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Location</label>
+          <input type="text" [(ngModel)]="newJob.location" placeholder="e.g. Pune / Remote" />
+        </div>
+
+        <div class="form-group">
+          <label>Status</label>
+          <select [(ngModel)]="newJob.status">
+            <option [ngValue]="4">Saved / Interested</option>
+            <option [ngValue]="0">Applied</option>
+            <option [ngValue]="1">Interview</option>
+            <option [ngValue]="2">Offer</option>
+            <option [ngValue]="3">Rejected</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Job Portal Link / Notes</label>
+        <input type="text" [(ngModel)]="newJob.notes" placeholder="https://..." />
+      </div>
+
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="displayAddModal = false">Cancel</button>
+        <button class="save-btn" (click)="saveNewJob()" [disabled]="!newJob.company || !newJob.role">Save Application</button>
+      </div>
+    </div>
+  </div>
+</div>
