@@ -1,63 +1,42 @@
-# 🧭 Job Tracker (Angular + .NET 8 + SQLite/PostgreSQL)
+# 🚀 SaaS Job Tracker & Career Discovery Platform
 
-A small full-stack app to track job applications.  
-Frontend: **Angular + PrimeNG + Formly**  
-Backend: **.NET 8 Web API + EF Core**  
-DB: **SQLite (default)**, **PostgreSQL (optional)**
+A high-end, full-stack SaaS job application tracking and discovery platform designed for software engineers. Built with modern enterprise architecture, local PDF resume parsing, experience-aware job filtering, and multi-source live job aggregation.
 
 ---
 
-## ✅ Prerequisites
+## 🛠️ Tech Stack
 
-- **.NET 8 SDK** → https://dotnet.microsoft.com/download  
-- **Node.js 18+** (includes npm) → https://nodejs.org  
-- **Angular CLI**: `npm i -g @angular/cli`  
-- **PostgreSQL 12+** *(optional, if switching from SQLite)*
+### Backend (`JobTracker.Api`)
+* **Framework:** ASP.NET Core Web API (.NET 8)
+* **ORM & Database:** Entity Framework Core with SQL Server (`JobApplication` entity persistence)
+* **PDF Processing:** `PdfPig` for local resume text extraction and experience calculation
+* **Architecture:** Repository and Service-oriented pattern with strict controller separation
 
-> 💡 On Windows, the first HTTPS run may prompt you to trust the dev certificate.
+### Frontend (`job-tracker-ui`)
+* **Framework:** Angular (Standalone Components)
+* **UI Library:** PrimeNG components with a custom dark-slate SaaS design theme
+* **Layout Features:** Dual-tab view switching (Swipe Discovery deck and Saved Jobs folder table) with INR salary formatting and direct portal apply links
 
 ---
 
-## 🚀 Backend (API) — SQLite (default)
+## ✨ Key Features
 
+1. **Local PDF Resume Parsing:** Upload your resume directly to automatically extract technical skill sets and compute professional years of experience.
+2. **Experience-Aware Job Discovery:** Dynamically filters out senior-level requirements, aligning opportunities for entry-level and junior positions.
+3. **Multi-Source Job Aggregation:** Combines live openings from Remotive, Arbeitnow, and curated product/startup career portals.
+4. **Interactive Management:** Track application statuses, save target listings to your personalized folder, and jump straight to direct company application portals.
+
+---
+
+## ⚙️ Getting Started Locally
+
+### Prerequisites
+* .NET 8 SDK
+* Node.js & Angular CLI
+* SQL Server (LocalDB or standard instance)
+
+### Running the Backend
 ```bash
-cd JobTracker.Api
-
-# restore packages
+cd JobTracker.Api/JobTracker.Api
 dotnet restore
-
-# (first time only) install EF CLI tools if you don't have them
-dotnet tool install -g dotnet-ef
-
-# create SQLite DB and schema
-dotnet ef database update
-
-# trust the dev HTTPS certificate (first time)
-dotnet dev-certs https --trust
-
-# run with hot reload
-dotnet watch run
-
-## 🚀 Frontend (UI) — Angular + PrimeNG
-
-```bash
-cd job-tracker-ui
-
-# install dependencies
-npm install
-
-# start the dev server
-npm start
-
-
-
-## proxy.conf.json
-
-{
-  "/api": {
-    "target": "http://localhost:5280",
-    "secure": false,
-    "changeOrigin": true,
-    "logLevel": "debug"
-  }
-}
+dotnet run
